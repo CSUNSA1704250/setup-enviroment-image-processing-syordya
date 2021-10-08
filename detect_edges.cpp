@@ -3,32 +3,25 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 #include <math.h> 
+#include "hpc_helpers.hpp"
 
-int main( int argc, char** argv ) {
-  
-  cv::Mat image;
+
+void Convert_grayScale_Blur(cv::Mat &imagen_entrada, cv::Mat &imagen_salida)
+{
   cv::Mat img_gray;
-  cv::Mat img_blur;
-  cv::Mat img_answer;
-  image = cv::imread("tiger.jpeg" ,cv::IMREAD_COLOR);
 
-  if(!image.data ) {
-    std::cout <<  "No hay imagen" << std::endl ;
-    return -1;
-  }
-
-  cv::cvtColor(image,img_gray,cv::COLOR_BGR2GRAY);
+  // Conversion a escala de grises
+  cv::cvtColor(imagen_entrada,img_gray,cv::COLOR_BGR2GRAY);
   
-  cv::GaussianBlur(img_gray, img_blur, cv::Size(3,3), 0);
+  // Aplicación de Blur a la imagen con un tamaño de filtro de 3x3
+  cv::GaussianBlur(img_gray, imagen_salida, cv::Size(3,3), 0);
 
-  cv::cvtColor( img_blur, img_answer, cv::COLOR_BGR2GRAY );
-
-  cv::Size sz = image.size();
-  int imageWidth = sz.width;
-  int imageHeight = sz.height;
+}
 
 
-  std::vector<std::vector<int>> kernel_mat(3);
+
+void filtro_gaussiano_inicializar(std::vector<std::vector<float>> &kernel_mat)
+{
   for (int i = 0; i < 3; ++i)
   {
     kernel_mat[i].resize(3);
@@ -45,23 +38,63 @@ int main( int argc, char** argv ) {
   kernel_mat[2][0] = -1;
   kernel_mat[2][1] = -2;
   kernel_mat[2][2] = -1;
-  int x, y;
+}
 
+
+
+//void conv_matriz(int ancho, int altura, cv::Mat &img_answer, )
+
+
+int main( int argc, char** argv ) {
+  
+  cv::Mat image;  
+  cv::Mat img_blur;  
+
+  // Lectura de imagen
+  image = cv::imread("tiger.jpeg" ,cv::IMREAD_COLOR);
+
+  if(!image.data ) {
+    std::cout <<  "No hay imagen" << std::endl ;
+    return -1;
+  }
+
+  // Procesamiento de imagen inicial
+  Convert_grayScale_Blur(image, img_blur);
+
+  // Imagen respuesta
+  cv::Mat img_answer;
+  cv::cvtColor( image, img_answer, cv::COLOR_BGR2GRAY );
+ 
+
+  //Filtro gausiano
+  std::vector<std::vector<float>> kernel_mat(3);
+  filtro_gaussiano_inicializar(kernel_mat);
+
+
+  // Convolución de la matriz por el kernel gaussiano
+  cv::Size sz = image.size();
+  int imageWidth = sz.width;
+  int imageHeight = sz.height;
+  uint8_t x, y; 
   for(int i = 1; i < imageHeight-1; i++)
   {
     for(int j = 1; j < imageWidth-1; j++)
     {
-      x=img_blur.at<int>(i+1,j-1)*kernel_mat[2][0]+img_blur.at<int>(i+1,j)*kernel_mat[2][1]+img_blur.at<int>(i+1,j+1)*kernel_mat[2][2]+(img_blur.at<int>(i-1,j-1)*kernel_mat[0][0]+img_blur.at<int>(i-1,j)*kernel_mat[0][1]+img_blur.at<int>(i-1,j+1)*kernel_mat[0][2]);
-      y=(img_blur.at<int>(i-1,j+1)*kernel_mat[0][2]+img_blur.at<int>(i,j+1)*kernel_mat[1][2]+img_blur.at<int>(i+1,j+1)*kernel_mat[2][2])+(img_blur.at<int>(i-1, j-1)*kernel_mat[0][0]+img_blur.at<int>(i,j-1)*kernel_mat[1][0]+img_blur.at<int>(i+1,j-1)*kernel_mat[2][0]);
-      img_answer.at<int>(i-1,j-1)=sqrt(pow(x,2)+pow(y,2));
-    }
-        
+      x=img_blur.at<uint8_t>(i+1,j-1)*kernel_mat[2][0]+img_blur.at<uint8_t>(i+1,j)*kernel_mat[2][1]+img_blur.at<uint8_t>(i+1,j+1)*kernel_mat[2][2]+(img_blur.at<uint8_t>(i-1,j-1)*kernel_mat[0][0]+img_blur.at<uint8_t>(i-1,j)*kernel_mat[0][1]+img_blur.at<uint8_t>(i-1,j+1)*kernel_mat[0][2]);
+      y=(img_blur.at<uint8_t>(i-1,j+1)*kernel_mat[0][2]+img_blur.at<uint8_t>(i,j+1)*kernel_mat[1][2]+img_blur.at<uint8_t>(i+1,j+1)*kernel_mat[2][2])+(img_blur.at<uint8_t>(i-1, j-1)*kernel_mat[0][0]+img_blur.at<uint8_t>(i,j-1)*kernel_mat[1][0]+img_blur.at<uint8_t>(i+1,j-1)*kernel_mat[2][0]);
+      img_answer.at<uint8_t>(i-1,j-1)=sqrt(x*x+y*y);      
+    }       
   }
+
+
+  // Extracción de contornos de la imagen
   std::vector<std::vector<cv::Point> > contours;
   std::vector<cv::Vec4i> hierarchy;
   cv::findContours(img_answer,contours, hierarchy, cv::RETR_EXTERNAL,cv::CHAIN_APPROX_SIMPLE);
-  cv::drawContours(img_answer,contours,-1,cv::Scalar(255,0,0),1);
 
+  // Dibujo de contornos en base a los puntos hallados previamente
+  cv::drawContours(img_answer,contours,-1,cv::Scalar(255,0,0),1, cv::LINE_8, hierarchy, 0 );
+  
 
   cv::imshow( "OpenCV Test Program", img_answer);
   
