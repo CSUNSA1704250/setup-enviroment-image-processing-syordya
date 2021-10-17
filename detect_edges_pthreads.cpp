@@ -149,5 +149,7 @@ int main( int argc, char** argv ) {
   cv::imshow( "OpenCV Test Program", img_answer);  
   cv::waitKey(0);
   */
+
+  cv::imwrite("bordes_tigre.png", img_answer);
   return 0;
 }
