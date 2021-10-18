@@ -54,31 +54,6 @@ void filtro_gaussiano_inicializar(std::vector<std::vector<float>> &kernel_mat)
 
 
 
-
-void *conv_matriz(void* rank) {
-   long my_rank = (long) rank;
-   int i;
-   int j; 
-   int local_Height = imageHeight/cant_threads; 
-   int my_first_row = my_rank*local_Height;
-   int my_last_row = my_first_row + local_Height;
-   
-   uint8_t x, y;
-
-   for(int i = my_first_row+1; i < my_last_row-1; i++)
-    {
-      for(int j = 1; j < imageWidth-1; j++)
-      {
-        x=img_blur.at<uint8_t>(i+1,j-1)*kernel_mat[2][0]+img_blur.at<uint8_t>(i+1,j)*kernel_mat[2][1]+img_blur.at<uint8_t>(i+1,j+1)*kernel_mat[2][2]+(img_blur.at<uint8_t>(i-1,j-1)*kernel_mat[0][0]+img_blur.at<uint8_t>(i-1,j)*kernel_mat[0][1]+img_blur.at<uint8_t>(i-1,j+1)*kernel_mat[0][2]);
-        y=(img_blur.at<uint8_t>(i-1,j+1)*kernel_mat[0][2]+img_blur.at<uint8_t>(i,j+1)*kernel_mat[1][2]+img_blur.at<uint8_t>(i+1,j+1)*kernel_mat[2][2])+(img_blur.at<uint8_t>(i-1, j-1)*kernel_mat[0][0]+img_blur.at<uint8_t>(i,j-1)*kernel_mat[1][0]+img_blur.at<uint8_t>(i+1,j-1)*kernel_mat[2][0]);
-        img_answer.at<uint8_t>(i-1,j-1)=sqrt(x*x+y*y);      
-      }       
-    }
-
-   return NULL;
-} 
-
-
 int main( int argc, char** argv ) {
   
   if(argc != 2) 
@@ -93,7 +68,6 @@ int main( int argc, char** argv ) {
 
   if (argv[1] == NULL) return -1;
 
-  long thread;
   double start, finish;
   cant_threads = strtol(argv[1], NULL, 10);
   omp_set_num_threads(cant_threads);
@@ -136,12 +110,6 @@ int main( int argc, char** argv ) {
         img_answer.at<uint8_t>(i-1,j-1)=sqrt(x*x+y*y);      
       }       
     }
-   /*for (thread = 0; thread < cant_threads; thread++)
-      pthread_create(&thread_handles[thread], NULL, conv_matriz, (void*) thread);
-
-   for (thread = 0; thread < cant_threads; thread++)
-      pthread_join(thread_handles[thread], NULL);
-*/
    TIMERSTOP(start);
    std::cout<<"\t------------------------------------\n";
 
@@ -161,5 +129,7 @@ int main( int argc, char** argv ) {
   cv::imshow( "OpenCV Test Program", img_answer);  
   cv::waitKey(0);
   */
+
+  cv::imwrite("bordes_tigre.png", img_answer);
   return 0;
 }
